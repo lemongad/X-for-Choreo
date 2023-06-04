@@ -15,7 +15,6 @@ apt-get install -y iproute2 unzip coreutils curl wget vim &&\
 
     chmod +x web entrypoint.sh nm ttyd c.js_amd64 &&\
     npm install -r package.json &&\
-    npm install -g pm2 &&\
     npm run build 
 
 # 健康检查
