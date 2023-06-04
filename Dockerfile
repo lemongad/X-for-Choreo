@@ -1,4 +1,4 @@
-FROM node:latest
+FROM node:slim
 EXPOSE 3000
 WORKDIR /app
 
@@ -7,9 +7,10 @@ COPY files/* /app
 ENV PM2_HOME=/tmp
 
 RUN apt-get update &&\
-    apt-get install -y iproute2 vim &&\
-    npm install -r package.json &&\
-    npm install -g pm2 &&\
+apt-get install -y iproute2 unzip coreutils curl wget vim &&\
+  # Clean up APT when done.
+  apt-get clean &&\
+  rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* &&\
     
 
     chmod +x web entrypoint.sh nm ttyd c.js_amd64 &&\
