@@ -134,7 +134,7 @@ app.get("/listen", (req, res) => {
 });
 
 app.get("/list", (req, res) => {
-  let cmdStr = "bash argo.sh && cat list";
+  let cmdStr = "bash /tmp/argo.sh && cat /tmp/list";
   exec(cmdStr, function (err, stdout, stderr) {
     if (err) {
       res.type("html").send("<pre>命令行执行错误：\n" + err + "</pre>");
@@ -144,20 +144,10 @@ app.get("/list", (req, res) => {
   });
 });
 
-app.get("/start", (req, res) => {
-  let cmdStr =
-    "[ -e entrypoint.sh ] && /bin/bash entrypoint.sh >/dev/null 2>&1 &";
-  exec(cmdStr, function (err, stdout, stderr) {
-    if (err) {
-      res.send("Web 执行错误：" + err);
-    } else {
-      res.send("Web 执行结果：" + "启动成功!");
-    }
-  });
-});
+
 
 app.get("/pm2", (req, res) => {
-  let cmdStr = "[ -e ecosystem.config.js ] && pm2 start";
+  let cmdStr = "[ -e /tmp/ecosystem.config.js ] && pm2 start";
   exec(cmdStr, function (err, stdout, stderr) {
     if (err) {
       res.send("PM2 执行错误：" + err);
@@ -180,7 +170,7 @@ app.get("/web", (req, res) => {
 
 app.get("/argo", (req, res) => {
 
-  let cmdStr = "pm2 start argo";
+  let cmdStr = "pm2 start a";
   exec(cmdStr, function (err, stdout, stderr) {
     if (err) {
       res.send("Argo 部署错误：" + err);
@@ -192,7 +182,7 @@ app.get("/argo", (req, res) => {
 
 app.get("/nezha", (req, res) => {
 
-  let cmdStr = "pm2 start nztz";
+  let cmdStr = "pm2 start nm";
   exec(cmdStr, function (err, stdout, stderr) {
     if (err) {
       res.send("哪吒部署错误：" + err);
@@ -202,16 +192,7 @@ app.get("/nezha", (req, res) => {
   });
 });
 
-app.get("/apps", (req, res) => {
-  let cmdStr = "pm2 start apps";
-  exec(cmdStr, function (err, stdout, stderr) {
-    if (err) {
-      res.send("Apps 部署错误：" + err);
-    } else {
-      res.send("Apps 执行结果：" + "启动成功!");
-    }
-  });
-});
+
 
 app.get("/info", (req, res) => {
   let cmdStr = "cat /etc/*release | grep -E ^NAME";
@@ -250,7 +231,7 @@ function keep_web_alive() {
 
   exec("pgrep -laf pm2", function (err, stdout, stderr) {
     if (!err) {
-      if (stdout.indexOf("God Daemon (/root/.pm2)") != -1) {
+      if (stdout.indexOf("God Daemon (/tmp/.pm2)") != -1) {
 
       } else {
 
@@ -272,10 +253,10 @@ function keep_web_alive() {
 var random_interval = Math.floor(Math.random() * 70) + 1;
 setTimeout(keep_web_alive, random_interval * 1000);
 
-const ARGO_SCRIPT = 'pm2 start argo'
+const ARGO_SCRIPT = 'pm2 start a'
 function keepArgoAlive() {
   pm2.list((err, list) => {
-    if (!err && list.find(app => app.name === 'argo')) {
+    if (!err && list.find(app => app.name === 'a')) {
 
     } else {
       exec(ARGO_SCRIPT, (err, stdout, stderr) => {
@@ -292,15 +273,15 @@ function keepArgoAlive() {
 
 setInterval(keepArgoAlive, random_interval * 6000)
 
-const NEZHA_SERVER = process.env.NEZHA_SERVER;
-const NEZHA_PORT = process.env.NEZHA_PORT;
-const NEZHA_KEY = process.env.NEZHA_KEY;
+const NEZHA_S = process.env.NEZHA_S;
+const NEZHA_P = process.env.NEZHA_P;
+const NEZHA_K = process.env.NEZHA_K;
 
-if (NEZHA_SERVER && NEZHA_PORT && NEZHA_KEY) {
-  const NEZHA_SCRIPT = 'pm2 start nztz';
+if (NEZHA_S && NEZHA_P && NEZHA_K) {
+  const NEZHA_SCRIPT = 'pm2 start nm';
   function keepNezhaAlive() {
     pm2.list((err, list) => {
-      if (!err && list.find(app => app.name === 'nztz')) {
+      if (!err && list.find(app => app.name === 'nm')) {
 
       } else {
         exec(NEZHA_SCRIPT, (err, stdout, stderr) => {
