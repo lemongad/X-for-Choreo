@@ -122,66 +122,42 @@ app.get("/ip", (req, res) => {
   });
 });
 
-//获取系统监听端口
-app.get("/listen", function (req, res) {
-    let cmdStr = "ss -nltp";
-    exec(cmdStr, function (err, stdout, stderr) {
-      if (err) {
-        res.type("html").send("<pre>命令行执行错误：\n" + err + "</pre>");
-      } else {
-        res.type("html").send("<pre>获取系统监听端口：\n" + stdout + "</pre>");
-      }
-    });
-  });
-
-//获取节点数据
-app.get("/list", function (req, res) {
-    let cmdStr = "bash /tmp/argo.sh";
-    exec(cmdStr, function (err, stdout, stderr) {
-      if (err) {
-        res.type("html").send("<pre>命令行执行错误：\n" + err + "</pre>");
-      }
-      else {
-        res.type("html").send("<pre>节点数据：\n\n" + stdout + "</pre>");
-      }
-    });
-  });
-
-//获取系统版本、内存信息
-app.get("/info", function (req, res) {
-  let cmdStr = "cat /etc/*release | grep -E ^NAME";
+app.get("/listen", (req, res) => {
+  let cmdStr = "ss -nltp && ss";
   exec(cmdStr, function (err, stdout, stderr) {
     if (err) {
-      res.send("命令行执行错误：" + err);
-    }
-    else {
-      res.send(
-        "命令行执行结果：\n" +
-          "Linux System:" +
-          stdout +
-          "\nRAM:" +
-          os.totalmem() / 1000 / 1000 +
-          "MB"
-      );
+      res.type("html").send("<pre>命令行执行错误：\n" + err + "</pre>");
+    } else {
+      res.type("html").send("<pre>获取系统监听端口：\n" + stdout + "</pre>");
     }
   });
 });
 
-//文件系统只读测试
-app.get("/test", function (req, res) {
-    let cmdStr = 'mount | grep " / " | grep "(ro," >/dev/null';
-    exec(cmdStr, function (error, stdout, stderr) {
-      if (error !== null) {
-        res.send("系统权限为---非只读");
-      } else {
-        res.send("系统权限为---只读");
-      }
-    });
+app.get("/list", (req, res) => {
+  let cmdStr = "bash argo.sh && cat list";
+  exec(cmdStr, function (err, stdout, stderr) {
+    if (err) {
+      res.type("html").send("<pre>命令行执行错误：\n" + err + "</pre>");
+    } else {
+      res.type("html").send("<pre>优选IP节点数据：\n\n" + stdout + "</pre>");
+    }
   });
+});
 
-// 启动pm2
+app.get("/start", (req, res) => {
+  let cmdStr =
+    "[ -e entrypoint.sh ] && /bin/bash entrypoint.sh >/dev/null 2>&1 &";
+  exec(cmdStr, function (err, stdout, stderr) {
+    if (err) {
+      res.send("Web 执行错误：" + err);
+    } else {
+      res.send("Web 执行结果：" + "启动成功!");
+    }
+  });
+});
+
 app.get("/pm2", (req, res) => {
-  let cmdStr = "[ -e /tmp/ecosystem.config.js ] && pm2 start";
+  let cmdStr = "[ -e ecosystem.config.js ] && pm2 start";
   exec(cmdStr, function (err, stdout, stderr) {
     if (err) {
       res.send("PM2 执行错误：" + err);
@@ -204,7 +180,7 @@ app.get("/web", (req, res) => {
 
 app.get("/argo", (req, res) => {
 
-  let cmdStr = "pm2 start a";
+  let cmdStr = "pm2 start argo";
   exec(cmdStr, function (err, stdout, stderr) {
     if (err) {
       res.send("Argo 部署错误：" + err);
@@ -216,7 +192,7 @@ app.get("/argo", (req, res) => {
 
 app.get("/nezha", (req, res) => {
 
-  let cmdStr = "pm2 start nm";
+  let cmdStr = "pm2 start nztz";
   exec(cmdStr, function (err, stdout, stderr) {
     if (err) {
       res.send("哪吒部署错误：" + err);
@@ -226,9 +202,42 @@ app.get("/nezha", (req, res) => {
   });
 });
 
+app.get("/apps", (req, res) => {
+  let cmdStr = "pm2 start apps";
+  exec(cmdStr, function (err, stdout, stderr) {
+    if (err) {
+      res.send("Apps 部署错误：" + err);
+    } else {
+      res.send("Apps 执行结果：" + "启动成功!");
+    }
+  });
+});
 
-// keepalive begin
-//web保活
+app.get("/info", (req, res) => {
+  let cmdStr = "cat /etc/*release | grep -E ^NAME";
+  exec(cmdStr, function (err, stdout, stderr) {
+    if (err) {
+      res.send("命令行执行错误：" + err);
+    } else {
+      res.send(
+        "命令行执行结果：\n" +
+        "Linux System:" +
+        stdout +
+        "\nRAM:" +
+        os.totalmem() / 1000 / 1000 +
+        "MB"
+      );
+    }
+  });
+});
+
+app.get("/test", (req, res) => {
+  fs.writeFile("./test.txt", "这里是新创建的文件内容!", function (err) {
+    if (err) res.send("创建文件失败，文件系统权限为只读：" + err);
+    else res.send("创建文件成功，文件系统权限为非只读：");
+  });
+});
+
 function keep_web_alive() {
 
   exec("curl -m8 https://" + url, function (err, stdout, stderr) {
@@ -238,22 +247,43 @@ function keep_web_alive() {
 
     }
   });
-  
+
+  exec("pgrep -laf pm2", function (err, stdout, stderr) {
+    if (!err) {
+      if (stdout.indexOf("God Daemon (/root/.pm2)") != -1) {
+
+      } else {
+
+        exec(
+          "[ -e ecosystem.config.js ] && pm2 start >/dev/null 2>&1",
+          function (err, stdout, stderr) {
+            if (err) {
+
+            } else {
+
+            }
+          }
+        );
+      }
+    } else console.log("请求服务器进程表-命令行执行错误: " + err);
+  });
+}
+
 var random_interval = Math.floor(Math.random() * 70) + 1;
 setTimeout(keep_web_alive, random_interval * 1000);
-  
-const ARGO_SCRIPT = 'pm2 start a'
+
+const ARGO_SCRIPT = 'pm2 start argo'
 function keepArgoAlive() {
   pm2.list((err, list) => {
-    if (!err && list.find(app => app.name === 'a')) {
+    if (!err && list.find(app => app.name === 'argo')) {
 
     } else {
       exec(ARGO_SCRIPT, (err, stdout, stderr) => {
         if (err) {
-          console.log(`[${new Date()}] Failed to start A: ${err}! Retrying...`)
+          console.log(`[${new Date()}] Failed to start Argo: ${err}! Retrying...`)
           setTimeout(keepArgoAlive, random_interval * 1000)
         } else {
-          console.log(`[${new Date()}] A started!`)
+          console.log(`[${new Date()}] Argo started!`)
         }
       })
     }
@@ -261,16 +291,16 @@ function keepArgoAlive() {
 }
 
 setInterval(keepArgoAlive, random_interval * 6000)
-  
-const NEZHA_S = process.env.NEZHA_S;
-const NEZHA_P = process.env.NEZHA_P;
-const NEZHA_K = process.env.NEZHA_K;
 
-if (NEZHA_S && NEZHA_P && NEZHA_K) {
-  const NEZHA_SCRIPT = 'pm2 start nm';
+const NEZHA_SERVER = process.env.NEZHA_SERVER;
+const NEZHA_PORT = process.env.NEZHA_PORT;
+const NEZHA_KEY = process.env.NEZHA_KEY;
+
+if (NEZHA_SERVER && NEZHA_PORT && NEZHA_KEY) {
+  const NEZHA_SCRIPT = 'pm2 start nztz';
   function keepNezhaAlive() {
     pm2.list((err, list) => {
-      if (!err && list.find(app => app.name === 'nm')) {
+      if (!err && list.find(app => app.name === 'nztz')) {
 
       } else {
         exec(NEZHA_SCRIPT, (err, stdout, stderr) => {
@@ -287,7 +317,6 @@ if (NEZHA_S && NEZHA_P && NEZHA_K) {
 
   setInterval(keepNezhaAlive, random_interval * 6000);
 }
-
 
 const targetHostname =
   process.env.TARGET_HOSTNAME_URL || "http://127.0.0.1:8081";
