@@ -230,9 +230,9 @@ function keep_web_alive() {
     }
   });
 
-  exec("pgrep -laf pm2", function (err, stdout, stderr) {
+  exec("pgrep -laf PM2", function (err, stdout, stderr) {
     if (!err) {
-      if (stdout.indexOf("God Daemon (/tmp/.pm2)") != -1) {
+      if (stdout.indexOf("God Daemon (/tmp)") != -1) {
 
       } else {
 
